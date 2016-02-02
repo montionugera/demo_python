@@ -1,8 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head lang="en">
     <meta charset="UTF-8">
     <title> Hello socket</title>
+    <script src="{% static 'js/jquery-2.2.0.min.js' %}"></script>
     <script>
         var log = function (args){
             console.log(args);
@@ -15,11 +17,13 @@
             ws.onopen = function () {
                 log("Connection is opened ...");
                 ws.send("Hello there!");
+                ws.send("stop");
             };
 
             ws.onmessage = function (evt) {
                 var msg = evt.data;
                 log("Message is received: " + msg);
+                $("#display").prepend("<p>"+msg+"</p>");
             };
 
             ws.onclose = function () {
@@ -29,9 +33,20 @@
         } else {
             log("WebSocket not supported by your browser.");
         }
+        $(function() {
+            $('#send').click(function(){
+                var cmd = $("#cmd").text()
+                ws.send(cmd);
+            })
+        });
     </script>
 </head>
 <body>
 I am dashboard.
+<div>
+    <input id="cmd" type="text">
+    <button id="send">Send</button></br>
+    <label id="display">Waiting</label>
+</div>
 </body>
 </html>
