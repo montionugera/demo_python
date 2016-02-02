@@ -30,7 +30,7 @@ class SocketWorker(threading.Thread):
 
     def run(self):
         while True or not self._signal_close:
-            time.sleep(random.uniform(0, 1.9))
+            time.sleep(5)
             self.handler.re_submit_data()
 
 

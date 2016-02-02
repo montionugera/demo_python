@@ -35,7 +35,7 @@
         }
         $(function() {
             $('#send').click(function(){
-                var cmd = $("#cmd").text()
+                var cmd = $("#cmd").val()
                 ws.send(cmd);
             })
         });
