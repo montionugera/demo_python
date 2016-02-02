@@ -16,14 +16,14 @@ sudo pip install tornado
 python manage.py runserver
 
 ### If everything work you should can access the link below
-please access http://127.0.0.1:8000/
+http://127.0.0.1:8000/demosocket/
 
 ## 2nd run socket-server
 
 python server-socket.py
 
-### If everything work you should can access the link below
-please access http://127.0.0.1:8000/
+### If everything work you should can play the link below
+http://127.0.0.1:8000/demosocket/
 
 
 
