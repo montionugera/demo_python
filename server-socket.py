@@ -11,7 +11,7 @@ define("port", default=8001, type=int)
 Manager = {}
 class DataManager(object):
     clients = []
-    servers = []
+    servers = {}
 
     def regist_client(self,client):
         if client not in self.clients:
@@ -21,16 +21,24 @@ class DataManager(object):
         if client in self.clients:
             self.clients.remove(client)
 
-    def regist_server(self,server):
-        if server not in self.servers:
-            self.servers.append(server)
+    def regist_server(self,server,room_id):
+        room_id = str(room_id)
+        print "regist room _id"
+        if room_id not in self.servers:
+            self.servers[room_id] = []
+        self.servers[room_id].append(server)
+        print self.servers
 
     def unregist_server(self,server):
-        if server in self.servers:
-            self.servers.remove(server)
+        for room_id in self.servers:
+            servers = self.servers.get(room_id,[])
+            if server in servers:
+                servers.remove(server)
 
-    def did_recieve_message_from_client(self,msg):
-        for server in self.servers:
+    def did_recieve_message_from_client(self,msg,room_id):
+        room_id = str(room_id)
+        servers = self.servers.get(room_id,[])
+        for server in servers:
             server.write_message(msg)
 
 
@@ -92,13 +100,16 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.thread_worker = SocketWorker(thread_id=random.uniform(0,99), handler=self)
         self.thread_worker.start()
         self.write_message("Welcome!")
-        data_man = getClientRecieveDataManager()
-        data_man.regist_server(self)
 
     def on_message(self, message):
         print "New message {}".format(message)
-        self.last_data_recieve = message
-        self.write_message(message.upper())
+        if message.startswith("room_id"):
+            room_id= message.split(":")[1]
+            data_man = getClientRecieveDataManager()
+            data_man.regist_server(self,room_id)
+        else:
+            self.last_data_recieve = message
+            self.write_message(message.upper())
 
     def on_close(self):
         self.kill_thread()
@@ -108,7 +119,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
 class ClientWSHandler(tornado.websocket.WebSocketHandler):
     last_data_recieve = ""
-
 
     def check_origin(self, origin):
         return True
@@ -121,10 +131,14 @@ class ClientWSHandler(tornado.websocket.WebSocketHandler):
         self.write_message("Welcome!")
 
     def on_message(self, message):
-        data_man = getClientRecieveDataManager()
-
-        print "Client New message {}".format(message)
-        data_man.did_recieve_message_from_client(message)
+        if message.startswith("room_id"):
+            room_id= message.split(":")[1]
+            self.room_id = room_id
+            print "my room_id ="+room_id
+        else:
+            data_man = getClientRecieveDataManager()
+            print "%s : Client New message %s"%(self.room_id,message)
+            data_man.did_recieve_message_from_client(message,self.room_id)
 
     def on_close(self):
 

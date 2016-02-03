@@ -1,0 +1,170 @@
+{% load static %}
+<html lang="en">
+<head>
+    <title>Demo Rotate 3D model</title>
+    <meta charset="utf-8">
+
+    <script src="{% static 'js/three.min.js' %}"></script>
+
+</head>
+<body>
+
+</body>
+<div style="left:0 position: absolute;max-width: 100px">
+    <img src="data:image/png;base64,{{ base64qr_png }}" style="left:0 position: absolute;max-width: 100px"> {{ room_id }}
+</div>
+<div class="viewport" style="position: absolute"></div>
+<script>
+
+    var container, scene, renderer, camera, light, clock, loader;
+    var WIDTH, HEIGHT, VIEW_ANGLE, ASPECT, NEAR, FAR;
+    var room_id = "{{ room_id }}";
+    container = document.querySelector('.viewport');
+
+    clock = new THREE.Clock();
+
+    WIDTH = window.innerWidth,
+            HEIGHT = window.innerHeight;
+
+    VIEW_ANGLE = 45,
+            ASPECT = WIDTH / HEIGHT,
+            NEAR = 1,
+            FAR = 10000;
+
+    scene = new THREE.Scene();
+
+    renderer = new THREE.WebGLRenderer({antialias: true});
+
+    renderer.setSize(WIDTH, HEIGHT);
+    renderer.shadowMapEnabled = true;
+    renderer.shadowMapSoft = true;
+    renderer.shadowMapType = THREE.PCFShadowMap;
+    renderer.shadowMapAutoUpdate = true;
+
+    container.appendChild(renderer.domElement);
+
+    camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+
+    camera.position.set(0, 100, 300);
+    camera.rotation.x = -Math.PI / 12;
+
+    scene.add(camera);
+
+    light = new THREE.DirectionalLight(0xffffff);
+
+    light.position.set(0, 100, 60);
+    light.castShadow = true;
+    light.shadowCameraLeft = -60;
+    light.shadowCameraTop = -60;
+    light.shadowCameraRight = 60;
+    light.shadowCameraBottom = 60;
+    light.shadowCameraNear = 1;
+    light.shadowCameraFar = 1000;
+    light.shadowBias = -.0001
+    light.shadowMapWidth = light.shadowMapHeight = 1024;
+    light.shadowDarkness = .7;
+
+    scene.add(light);
+
+    loader = new THREE.JSONLoader();
+    var mesh;
+    loader.load('{% static 'js/car.js' %}', function (geometry, materials) {
+        var material = new THREE.MeshLambertMaterial({
+            map: THREE.ImageUtils.loadTexture('{% static 'images/gtare.jpg' %}'),
+            colorAmbient: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+            colorDiffuse: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+            colorSpecular: [0.8999999761581421, 0.8999999761581421, 0.8999999761581421]
+        });
+
+        mesh = new THREE.Mesh(
+                geometry,
+                material
+        );
+
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+        mesh.rotation.y = -Math.PI / 5;
+
+        scene.add(mesh);
+        render();
+    });
+
+    var model_angle = {x: 0, y: 0, z: -9.84};
+    var g_f = 9.84;
+    var min_dif = Math.PI/180*10;
+    var diff = Math.PI/180*1;
+    function render() {
+        var angle_diff = mesh.rotation.y - model_angle.x * 0.5 * Math.PI / g_f;
+        if (Math.abs(angle_diff) > min_dif) {
+            if (angle_diff > 0) {
+                mesh.rotation.y -= diff
+            } else {
+                mesh.rotation.y += diff
+            }
+        }
+
+        angle_diff = mesh.rotation.x - model_angle.y * 0.5 * Math.PI / g_f;
+        if (Math.abs(angle_diff) > min_dif) {
+            if (angle_diff > 0) {
+                mesh.rotation.x -= diff
+            } else {
+                mesh.rotation.x += diff
+            }
+        }
+
+        angle_diff = mesh.rotation.z - model_angle.z * -0.5 * Math.PI / g_f + Math.PI / 2;
+        if (Math.abs(angle_diff) > min_dif) {
+            if (angle_diff > 0) {
+                mesh.rotation.z -= diff
+            } else {
+                mesh.rotation.z += diff
+            }
+        }
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(render);
+    }
+    var log = function (args) {
+        console.log(args);
+    };
+    if ("WebSocket" in window) {
+        log("WebSocket is supported by your browser.");
+
+        var ws = new WebSocket("ws://{{ host_val }}:8001/ws/");
+
+        ws.onopen = function () {
+            log("Connection is opened ...");
+            ws.send("room_id:"+room_id);
+            ws.send("stop");
+        };
+
+        ws.onmessage = function (evt) {
+            var msg = evt.data;
+            log("Message is received: " + msg);
+            var array = msg.split(',')
+            if (array.length == 3) {
+                var detail_le = 7;
+                model_angle = {
+                    x: parseFloat(array[0].slice(0, detail_le)),
+                    y: parseFloat(array[1].slice(0, detail_le)),
+                    z: parseFloat(array[2].slice(0, detail_le))
+                }
+            }
+
+        };
+
+        ws.onclose = function () {
+            log("Connection is closed ...");
+        };
+
+    } else {
+        log("WebSocket not supported by your browser.");
+    }
+    $(function () {
+        $('#send').click(function () {
+            var cmd = $("#cmd").val()
+            ws.send(cmd);
+        })
+    });
+</script>
+</html>
