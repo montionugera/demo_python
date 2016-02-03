@@ -1,10 +1,112 @@
 <!DOCTYPE html>
 <html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>Client</title>
+<head>
+  <title>WebSockets Client</title>  
+  <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 </head>
 <body>
- I am client
+Enter text to send to the websocket server:
+<div id="send">
+    <input type="text" id="data" size="100"/><br>
+    <input type="button" id="sendtext" value="send text"/>
+</div>
+<div id="output"></div>
 </body>
 </html>
+<script>
+
+jQuery(function($){
+
+  if (!("WebSocket" in window)) {
+    alert("Your browser does not support web sockets");
+  }else{
+    // alert("Set up");
+    setup();
+  }
+
+
+  function setup(){
+   
+    // Note: You have to change the host var 
+    // if your client runs on a different machine than the websocket server
+    
+    var host = "ws://{{ host_val }}:8001/submit/";
+    var socket = new WebSocket(host);
+    // alert("socket status: " + socket.readyState);   
+    
+    var $txt = $("#data");
+    var $btnSend = $("#sendtext");
+
+    $txt.focus();
+
+    // event handlers for UI
+    $btnSend.on('click',function(){
+      var text = $txt.val();
+      if(text == ""){
+        return;
+      }
+      socket.send(text);
+      $txt.val("");    
+    });
+
+    $txt.keypress(function(evt){
+      if(evt.which == 13){
+        $btnSend.click();
+      }
+    });
+
+    // event handlers for websocket
+    if(socket){
+      socket.onopen = function(){
+
+         function motion(event){
+            var montion_data = "Accelerometer: "
+             + event.accelerationIncludingGravity.x + ", "
+             + event.accelerationIncludingGravity.y + ", "
+             + event.accelerationIncludingGravity.z;
+            // alert("montion_data :"+montion_data);
+           socket.send(montion_data);
+         }
+         
+
+         if(window.DeviceMotionEvent){
+           window.addEventListener("devicemotion", motion, false);
+         }else{
+           console.log("DeviceMotionEvent is not supported");
+
+           //alert("DeviceMotionEvent is not supported");
+         }
+      }
+
+      socket.onmessage = function(msg){
+         // alert("onmessage");
+        showServerResponse(msg.data);
+      }
+
+      socket.onclose = function(){
+         // alert("onclose");
+        showServerResponse("The connection has been closed.");
+      }
+
+    }else{
+      alert("invalid socket");
+    }
+
+    function showServerResponse(txt){
+
+        // alert("showServerResponse ...."+txt);   
+      var p = document.createElement('p');
+      p.innerHTML = txt;
+      document.getElementById('output').appendChild(p); 
+    } 
+
+      // alert("added handlers");
+
+  }
+
+
+});
+
+
+
+</script>

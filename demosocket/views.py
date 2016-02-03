@@ -7,8 +7,11 @@ from django.template import loader
 
 def index(request):
 
-    return render(request, 'demo_socket/index.html', {})
+    host_val = request.get_host()
+    host_val = host_val.split(':')[0]
+    return render(request, 'demo_socket/index.html', {'host_val':host_val})
 
 def client(request):
-
-    return render(request, 'demo_socket/client.html', {})
+    host_val = request.get_host()
+    host_val = host_val.split(':')[0]
+    return render(request, 'demo_socket/client.html', {'host_val':host_val})

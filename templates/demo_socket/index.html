@@ -12,7 +12,7 @@
         if ("WebSocket" in window) {
             log("WebSocket is supported by your browser.");
 
-            var ws = new WebSocket("ws://127.0.0.1:8001/ws/");
+            var ws = new WebSocket("ws://{{ host_val }}:8001/ws/");
 
             ws.onopen = function () {
                 log("Connection is opened ...");

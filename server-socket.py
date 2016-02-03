@@ -8,6 +8,37 @@ from tornado.options import define, options, parse_command_line
 
 define("port", default=8001, type=int)
 
+Manager = {}
+class DataManager(object):
+    clients = []
+    servers = []
+
+    def regist_client(self,client):
+        if client not in self.clients:
+            self.clients.append(client)
+
+    def unregist_client(self,client):
+        if client in self.clients:
+            self.clients.remove(client)
+
+    def regist_server(self,server):
+        if server not in self.servers:
+            self.servers.append(server)
+
+    def unregist_server(self,server):
+        if server in self.servers:
+            self.servers.remove(server)
+
+    def did_recieve_message_from_client(self,msg):
+        for server in self.servers:
+            server.write_message(msg)
+
+
+def getClientRecieveDataManager():
+    key = 'data_man'
+    if Manager.get(key,None) is None:
+        Manager[key] = DataManager()
+    return Manager[key]
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -61,6 +92,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.thread_worker = SocketWorker(thread_id=random.uniform(0,99), handler=self)
         self.thread_worker.start()
         self.write_message("Welcome!")
+        data_man = getClientRecieveDataManager()
+        data_man.regist_server(self)
 
     def on_message(self, message):
         print "New message {}".format(message)
@@ -69,12 +102,40 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         self.kill_thread()
+        data_man = getClientRecieveDataManager()
+        data_man.unregist_server(self)
         print "Connection closed"
 
+class ClientWSHandler(tornado.websocket.WebSocketHandler):
+    last_data_recieve = ""
+
+
+    def check_origin(self, origin):
+        return True
+
+    def open(self, *args):
+        print "New Client connection"
+        #
+        # data_man = getClientRecieveDataManager()
+        # data_man.regist_client(self)
+        self.write_message("Welcome!")
+
+    def on_message(self, message):
+        data_man = getClientRecieveDataManager()
+
+        print "Client New message {}".format(message)
+        data_man.did_recieve_message_from_client(message)
+
+    def on_close(self):
+
+        # data_man = getClientRecieveDataManager()
+        # data_man.unregist_client(self)
+        print "Connection closed"
 
 app = tornado.web.Application([
     (r'/', IndexHandler),
     (r'/ws/', WebSocketHandler),
+    (r'/submit/', ClientWSHandler),
 ])
 
 if __name__ == '__main__':
