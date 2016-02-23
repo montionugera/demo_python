@@ -6,6 +6,7 @@ urlpatterns = [
     # ex: /polls/
     url(r'^$', views.index, name='index'),
     url(r'^2$', views.index2, name='index2'),
+    url(r'^all$', views.index_all, name='indexall'),
     url(r'^client/(\d+)/$', views.client, name='client'),
     # ex: /polls/5/
     # url(r'^(?P<question_id>[0-9]+)/$', views.detail, name='detail'),

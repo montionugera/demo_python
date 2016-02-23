@@ -95,29 +95,33 @@
     var diff = Math.PI/180*1;
     function render() {
         var angle_diff = mesh.rotation.y - model_angle.x * 0.5 * Math.PI / g_f;
+        var add_diff = Math.abs(angle_diff)/5;
+        if (add_diff < diff){
+            add_diff = diff
+        }
         if (Math.abs(angle_diff) > min_dif) {
             if (angle_diff > 0) {
-                mesh.rotation.y -= diff
+                mesh.rotation.y -= add_diff
             } else {
-                mesh.rotation.y += diff
+                mesh.rotation.y += add_diff
             }
         }
 
         angle_diff = mesh.rotation.x - model_angle.y * 0.5 * Math.PI / g_f;
         if (Math.abs(angle_diff) > min_dif) {
             if (angle_diff > 0) {
-                mesh.rotation.x -= diff
+                mesh.rotation.x -= add_diff
             } else {
-                mesh.rotation.x += diff
+                mesh.rotation.x += add_diff
             }
         }
 
         angle_diff = mesh.rotation.z - model_angle.z * -0.5 * Math.PI / g_f + Math.PI / 2;
         if (Math.abs(angle_diff) > min_dif) {
             if (angle_diff > 0) {
-                mesh.rotation.z -= diff
+                mesh.rotation.z -= add_diff
             } else {
-                mesh.rotation.z += diff
+                mesh.rotation.z += add_diff
             }
         }
 

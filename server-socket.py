@@ -146,10 +146,21 @@ class ClientWSHandler(tornado.websocket.WebSocketHandler):
         # data_man.unregist_client(self)
         print "Connection closed"
 
+class ClientAllWSHandler(ClientWSHandler):
+    last_data_recieve = ""
+
+    def open(self, *args):
+        print "New Client connection"
+        self.room_id = 1
+        self.write_message("Welcome!")
+
+
+
 app = tornado.web.Application([
     (r'/', IndexHandler),
     (r'/ws/', WebSocketHandler),
     (r'/submit/', ClientWSHandler),
+    (r'/submit_all/', ClientAllWSHandler),
 ])
 
 if __name__ == '__main__':
